@@ -11,6 +11,7 @@ app.use(express.json());
 app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(cors());
+app.set("query parser", "extended");
 
 app.use("/api", routes);
 app.listen(process.env.PORT || 8000, () => {

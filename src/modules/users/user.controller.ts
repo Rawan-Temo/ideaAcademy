@@ -25,8 +25,7 @@ const getAllUsers = async (req: Request, res: Response) => {
 const createUser = async (req: Request, res: Response) => {
   try {
     const { username, password } = req.body;
-
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await hashingPassword(password);
     const user = await UserService.createUser({
       username,
       password: hashedPassword,
@@ -37,5 +36,42 @@ const createUser = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-export { getAllUsers, createUser };
+const getOnUser = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const user = await UserService.getUserById(id);
+    res.status(200).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+const updateUser = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+    const data = req.body;
+    if (req.body.password) {
+      req.body.password = await hashingPassword(req.body.password);
+    }
+    const user = await UserService.updateUser(data, id);
+    res.status(200).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+const deleteManyUsers = async (req: Request, res: Response) => {
+  try {
+    const ids = req.body.ids;
+    const user = await UserService.deleteManyUsers(ids);
+    res.status(200).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+async function hashingPassword(password: string): Promise<string> {
+  const hashedPassword = await bcrypt.hash(password, 10);
+  return hashedPassword;
+}
+export { getAllUsers, createUser, getOnUser, updateUser, deleteManyUsers };
