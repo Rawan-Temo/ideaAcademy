@@ -3,10 +3,8 @@
 import { Request } from "express";
 import { Prisma } from "../../generated/prisma/client";
 import { prisma } from "../../prisma/client";
-
-
-
-export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>> {
+// TODO Add _multi
+export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>, U> {
   private model: T;
   private queryString: any;
   private options: any = {};
@@ -14,7 +12,7 @@ export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>> {
 
   constructor(
     model: T,
-    queryString: Request["query"],
+    queryString: U,
     prismaQuery: Parameters<(typeof prisma)[T]["findMany"]>[0]
   ) {
     this.model = model; // e.g., prisma.user
@@ -114,7 +112,6 @@ export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>> {
         (acc: any, f: string) => ({ ...acc, [f]: true }),
         {}
       );
-      console.log(this.options.select);
       this.options.select = {
         ...this.options.select,
         ...omitFieldsObject,

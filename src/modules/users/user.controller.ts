@@ -4,8 +4,12 @@ import { User } from "../../generated/prisma/browser";
 import { GetAllResponse } from "../../common/types/apiResponse";
 
 import bcrypt from "bcrypt";
+import { UserQueryDto } from "./user.types";
 
-const getAllUsers = async (req: Request, res: Response) => {
+const getAllUsers = async <T extends UserQueryDto>(
+  req: Request<any, any, any, T>,
+  res: Response
+) => {
   try {
     const { rows, count } = await UserService.getAllUsers(req.query);
     const reponse: GetAllResponse<User> = {

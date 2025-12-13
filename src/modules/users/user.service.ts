@@ -1,9 +1,9 @@
 import { Request } from "express";
 import { userRepository } from "./user.repository";
-import { CreateUserDTO, UpdateUserDTO } from "./user.types";
+import { CreateUserDTO, UpdateUserDTO, UserQueryDto } from "./user.types";
 
 export const UserService = {
-  getAllUsers: (query: Request["query"]) => {
+  getAllUsers: (query: UserQueryDto) => {
     return userRepository.getAll(query);
   },
   createUser: (data: CreateUserDTO) => {
