@@ -12,6 +12,10 @@ export const validate = (schema: any) => {
     }
   };
 };
+// GO FIBER TypeScript javascript express DBS GORM SEQUELIZE PRISMA MONGOOSE Docker
+// N Tier archetecture
+// front end  archetecture
+
 export function validateQuery<T extends QueryParams>(fieldschema: string[]) {
   return (
     req: Request<any, any, any, T>,
@@ -20,6 +24,7 @@ export function validateQuery<T extends QueryParams>(fieldschema: string[]) {
   ) => {
     try {
       const queryFields = req.query;
+      console.log("Test");
 
       if (queryFields.sort) {
         const sortFields = queryFields.sort.split(",");
@@ -48,9 +53,9 @@ export function validateQuery<T extends QueryParams>(fieldschema: string[]) {
         res.status(400).json({ message: `Invalid filtering query parameter` });
         return;
       }
-
       next();
     } catch (err: any) {
+      next();
       res.status(400).json({ message: err.errors || err.message });
     }
   };

@@ -55,4 +55,13 @@ export const userRepository = {
         id: { in: ids },
       },
     }),
+  findByUsername: (username: string) =>
+    prisma.user.findUnique({
+      where: {
+        username,
+      },
+      omit: {
+        password: true,
+      },
+    }),
 };

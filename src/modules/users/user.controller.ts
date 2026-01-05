@@ -1,17 +1,19 @@
-import type { Request, Response } from "express";
+import { request, type Request, type Response } from "express";
 import { UserService } from "./user.service";
 import { User } from "../../generated/prisma/browser";
 import { GetAllResponse } from "../../common/types/apiResponse";
 
 import bcrypt from "bcrypt";
-import { UserQueryDto } from "./user.types";
+import { UserLoginDTO, UserQueryDto } from "./user.types";
 
 const getAllUsers = async <T extends UserQueryDto>(
   req: Request<any, any, any, T>,
   res: Response
 ) => {
   try {
+    console.log("hi");
     const { rows, count } = await UserService.getAllUsers(req.query);
+
     const reponse: GetAllResponse<User> = {
       status: "success",
       data: rows,
@@ -78,4 +80,26 @@ async function hashingPassword(password: string): Promise<string> {
   const hashedPassword = await bcrypt.hash(password, 10);
   return hashedPassword;
 }
-export { getAllUsers, createUser, getOnUser, updateUser, deleteManyUsers };
+const login = async (
+  req: Request<any, any, UserLoginDTO, any>,
+  res: Response
+) => {
+  try {
+    console.log("test");
+    let { username, password } = req.body;
+    const user = await UserService.findByUsername(username);
+    console.log(user);
+
+    res.send("Hello WOrld!");
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+export {
+  login,
+  getAllUsers,
+  createUser,
+  getOnUser,
+  updateUser,
+  deleteManyUsers,
+};

@@ -18,4 +18,7 @@ export const UserService = {
   deleteManyUsers: (ids: any[]) => {
     return userRepository.deleteMany(ids);
   },
+  findByUsername: (username: string) => {
+    return userRepository.findByUsername(username);
+  },
 };
