@@ -4,7 +4,7 @@ import { Request } from "express";
 import { Prisma } from "../../generated/prisma/client";
 import { prisma } from "../../prisma/client";
 // TODO Add _multi
-export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>, U> {
+export class PrismaAPIFeatures<T extends Uncapitalize<Prisma.ModelName>, U> {
   private model: T;
   private queryString: any;
   private options: any = {};
@@ -13,7 +13,7 @@ export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>, U> {
   constructor(
     model: T,
     queryString: U,
-    prismaQuery: Parameters<(typeof prisma)[T]["findMany"]>[0]
+    prismaQuery: Parameters<(typeof prisma)[T]["findMany"]>[0],
   ) {
     this.model = model; // e.g., prisma.user
 
@@ -32,30 +32,32 @@ export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>, U> {
     const excludedFields = ["page", "sort", "limit", "fields", "search"];
     excludedFields.forEach((el) => delete queryObj[el]);
 
+    const numericOps = new Set(["gte", "gt", "lte", "lt"]);
+    const stringOps = new Set(["contains", "startsWith", "endsWith"]);
+
+    const parseValue = (raw: string): any => {
+      if (raw === "") return raw;
+      const num = Number(raw);
+      if (!isNaN(num)) return num;
+      if (!isNaN(Date.parse(raw))) return new Date(raw);
+      return raw;
+    };
+
     for (const key of Object.keys(queryObj)) {
       const value: any = queryObj[key];
 
-      // Handle comparison operators: ?age[gte]=20 or ?createdAt[gte]=2025-12-10
       if (typeof value === "object" && value !== null) {
-        const prismaOps: any = { gte: "gte", gt: "gt", lte: "lte", lt: "lt" };
         const fieldFilter: any = {};
+        let hasStringOp = false;
 
         for (const op in value) {
-          if (!prismaOps[op]) continue;
-
-          const raw = value[op]; // <- THIS is the actual string like "2025-12-10" or "20"
-          let converted: any = raw;
-
-          // Convert to number
-          if (!isNaN(Number(raw))) {
-            converted = Number(raw);
-
-            // Convert to Date
-          } else if (!isNaN(Date.parse(raw))) {
-            converted = new Date(raw);
+          if (stringOps.has(op)) {
+            fieldFilter[op] = String(value[op]);
+            hasStringOp = true;
+          } else if (numericOps.has(op)) {
+            fieldFilter[op] = parseValue(value[op]);
           }
-
-          fieldFilter[op] = converted;
+          // unknown ops are ignored
         }
 
         this.options.where[key] = fieldFilter;
@@ -63,19 +65,7 @@ export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>, U> {
       }
 
       // Simple equality
-      const raw = value;
-      let converted: any = raw;
-
-      // number
-      if (!isNaN(Number(raw))) {
-        converted = Number(raw);
-
-        // date
-      } else if (!isNaN(Date.parse(raw))) {
-        converted = new Date(raw);
-      }
-
-      this.options.where[key] = converted;
+      this.options.where[key] = parseValue(value);
     }
 
     return this;
@@ -105,12 +95,12 @@ export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>, U> {
       const omitFields = Object.keys(this.prismaQuery);
       if (omitFields.includes("omit")) {
         Object.keys(this.prismaQuery.omit).forEach(
-          (e) => (omitFieldsObject[e] = false)
+          (e) => (omitFieldsObject[e] = false),
         );
       }
       this.options.select = fields.reduce(
         (acc: any, f: string) => ({ ...acc, [f]: true }),
-        {}
+        {},
       );
       this.options.select = {
         ...this.options.select,
@@ -129,12 +119,16 @@ export class PrismaAPIFeatures<T extends Lowercase<Prisma.ModelName>, U> {
     return this;
   }
 
-  async findMany() {
-    return await prisma[this.model].findMany(this.options);
+  async findMany(includes = {}) {
+    const data = await (prisma[this.model] as any).findMany({
+      ...includes,
+      ...this.options,
+    });
+    return data;
   }
 
   async count() {
-    return await prisma[this.model].count({
+    return await (prisma[this.model] as any).count({
       where: this.options.where,
     });
   }

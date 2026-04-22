@@ -19,5 +19,29 @@ exports.userRepository = {
     create: (data) => client_1.prisma.user.create({
         data,
     }),
+    getById: (id) => client_1.prisma.user.findUnique({
+        where: {
+            id,
+        },
+        omit: {
+            password: true,
+        },
+    }),
+    update: (data, id) => client_1.prisma.user.update({
+        where: {
+            id,
+        },
+        data,
+    }),
+    deleteMany: (ids) => client_1.prisma.user.deleteMany({
+        where: {
+            id: { in: ids },
+        },
+    }),
+    findByUsername: (username) => client_1.prisma.user.findUnique({
+        where: {
+            username,
+        },
+    }),
 };
 //# sourceMappingURL=user.repository.js.map

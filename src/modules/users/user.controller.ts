@@ -5,26 +5,33 @@ import { GetAllResponse } from "../../common/types/apiResponse";
 
 import bcrypt from "bcrypt";
 import { UserLoginDTO, UserQueryDto } from "./user.types";
-
+import jwt from "jsonwebtoken";
+import {
+  generateAccToken,
+  generateRefToken,
+  setCookie,
+} from "../../common/helpers/generateAccRefToken";
+import {
+  sendAll,
+  sendBadRequest,
+  sendCreated,
+  sendInternalServerError,
+  sendNotFound,
+  sendOne,
+  sendUnauthorized,
+} from "../../common/utils/response";
 const getAllUsers = async <T extends UserQueryDto>(
   req: Request<any, any, any, T>,
-  res: Response
+  res: Response,
 ) => {
   try {
     console.log("hi");
     const { rows, count } = await UserService.getAllUsers(req.query);
 
-    const reponse: GetAllResponse<User> = {
-      status: "success",
-      data: rows,
-      results: rows.length,
-      total: count,
-    };
-
-    res.json(reponse);
+    sendAll(res, rows, 200, count);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Internal server error" });
+    sendInternalServerError(res, "Internal server error");
   }
 };
 
@@ -36,34 +43,37 @@ const createUser = async (req: Request, res: Response) => {
       username,
       password: hashedPassword,
     });
-    res.status(201).json(user);
+    sendCreated(res, user);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    sendInternalServerError(res, "Internal server error");
   }
 };
-const getOnUser = async (req: Request, res: Response) => {
+const getOneUser = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
     const user = await UserService.getUserById(id);
-    res.status(200).json(user);
+    if (!user) {
+      return sendNotFound(res, "User not found");
+    }
+    sendOne(res, user);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    sendInternalServerError(res, "Internal server error");
   }
 };
 const updateUser = async (req: Request, res: Response) => {
   try {
     const id = req.params.id;
-    const data = req.body;
     if (req.body.password) {
       req.body.password = await hashingPassword(req.body.password);
     }
+    const data = req.body;
     const user = await UserService.updateUser(data, id);
-    res.status(200).json(user);
+    sendOne(res, user);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    sendInternalServerError(res, "Internal server error");
   }
 };
 const deleteManyUsers = async (req: Request, res: Response) => {
@@ -73,33 +83,121 @@ const deleteManyUsers = async (req: Request, res: Response) => {
     res.status(200).json(user);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    sendInternalServerError(res, "Internal server error");
   }
 };
-async function hashingPassword(password: string): Promise<string> {
+export async function hashingPassword(password: string): Promise<string> {
   const hashedPassword = await bcrypt.hash(password, 10);
   return hashedPassword;
 }
 const login = async (
   req: Request<any, any, UserLoginDTO, any>,
-  res: Response
+  res: Response,
 ) => {
   try {
-    console.log("test");
     let { username, password } = req.body;
     const user = await UserService.findByUsername(username);
-    console.log(user);
+    if (!user) {
+      return sendBadRequest(res, "Invalid Username or Password");
+    }
 
-    res.send("Hello WOrld!");
+    let isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return sendBadRequest(res, "Invalid Username or Password");
+    }
+    let accessToken = generateAccToken(user);
+    let refreshToken = generateRefToken(user);
+    await UserService.saveRefreshToken(user.id, refreshToken);
+    setCookie(res, refreshToken);
+
+    res.status(200).json({
+      accessToken,
+      user: {
+        id: user.id,
+        username: user.username,
+      },
+    });
   } catch (error) {
-    res.status(500).json({ message: "Internal server error" });
+    console.log(error);
+    sendInternalServerError(res, "Internal server error");
   }
 };
+
+const refreshToken = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.refreshToken;
+    if (!token) {
+      sendUnauthorized(res, "No refresh token provided");
+      return;
+    }
+
+    const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as {
+      userId: string;
+    };
+
+    const user = await UserService.getUserById(payload.userId);
+    if (!user || user.refreshToken !== token) {
+      sendUnauthorized(res, "Invalid refresh token");
+      return;
+    }
+
+    const newAccessToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_ACCESS_SECRET!,
+      { expiresIn: "15m" },
+    );
+    const newRefreshToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET!,
+      { expiresIn: "7d" },
+    );
+
+    // fix 3: invalidate old token before saving new one
+    await UserService.saveRefreshToken(user.id, newRefreshToken);
+
+    res.cookie("refreshToken", newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ accessToken: newAccessToken });
+  } catch (error) {
+    console.error(error);
+    sendInternalServerError(res, "Internal server error");
+  }
+};
+
+const logout = async (req: Request, res: Response) => {
+  try {
+    const token = req.cookies.refreshToken;
+    console.log("Logging out user with token:", token);
+    if (token) {
+      try {
+        const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as {
+          userId: string;
+        };
+        await UserService.saveRefreshToken(payload.userId, null);
+      } catch {
+        // token invalid or expired — still proceed with logout
+      }
+    }
+    res.clearCookie("refreshToken");
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
+    console.error(error);
+    sendInternalServerError(res, "Internal server error");
+  }
+};
+
 export {
   login,
   getAllUsers,
   createUser,
-  getOnUser,
+  getOneUser,
   updateUser,
   deleteManyUsers,
+  logout,
+  refreshToken,
 };

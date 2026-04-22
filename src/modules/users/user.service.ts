@@ -21,4 +21,7 @@ export const UserService = {
   findByUsername: (username: string) => {
     return userRepository.findByUsername(username);
   },
+  saveRefreshToken: (userId: any, refreshToken: any) => {
+    return userRepository.update({ refreshToken }, userId);
+  },
 };

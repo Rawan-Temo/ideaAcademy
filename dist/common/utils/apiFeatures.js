@@ -3,15 +3,19 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PrismaAPIFeatures = void 0;
 const client_1 = require("../../prisma/client");
+// TODO Add _multi
 class PrismaAPIFeatures {
     constructor(model, queryString, prismaQuery) {
         this.options = {};
+        this.prismaQuery = {};
         this.model = model; // e.g., prisma.user
         this.queryString = queryString;
         this.options = {
             where: {},
-            ...prismaQuery,
         };
+        !this.queryString.fields &&
+            (this.options = { ...this.options, ...prismaQuery });
+        this.prismaQuery = prismaQuery;
     }
     filter() {
         const queryObj = { ...this.queryString };
@@ -19,36 +23,40 @@ class PrismaAPIFeatures {
         excludedFields.forEach((el) => delete queryObj[el]);
         for (const key of Object.keys(queryObj)) {
             const value = queryObj[key];
-            // Handle comparison operators: ?age[gte]=20
-            if (typeof value === "object") {
-                const prismaOps = {
-                    gte: "gte",
-                    gt: "gt",
-                    lte: "lte",
-                    lt: "lt",
-                };
+            // Handle comparison operators: ?age[gte]=20 or ?createdAt[gte]=2025-12-10
+            if (typeof value === "object" && value !== null) {
+                const prismaOps = { gte: "gte", gt: "gt", lte: "lte", lt: "lt" };
                 const fieldFilter = {};
                 for (const op in value) {
-                    if (prismaOps[op]) {
-                        fieldFilter[prismaOps[op]] = isNaN(value[op])
-                            ? value[op]
-                            : Number(value[op]);
+                    if (!prismaOps[op])
+                        continue;
+                    const raw = value[op]; // <- THIS is the actual string like "2025-12-10" or "20"
+                    let converted = raw;
+                    // Convert to number
+                    if (!isNaN(Number(raw))) {
+                        converted = Number(raw);
+                        // Convert to Date
                     }
+                    else if (!isNaN(Date.parse(raw))) {
+                        converted = new Date(raw);
+                    }
+                    fieldFilter[op] = converted;
                 }
                 this.options.where[key] = fieldFilter;
                 continue;
             }
-            // // Handle multi-value filters: field_multi=a,b,c
-            // if (key.endsWith("_multi")) {
-            //   const field = key.replace("_multi", "");
-            //   const values = String(value)
-            //     .split(",")
-            //     .map((v) => (isNaN(v) ? v : Number(v)));
-            //   this.options.where[field] = { in: values };
-            //   continue;
-            // }
             // Simple equality
-            this.options.where[key] = isNaN(value) ? value : Number(value);
+            const raw = value;
+            let converted = raw;
+            // number
+            if (!isNaN(Number(raw))) {
+                converted = Number(raw);
+                // date
+            }
+            else if (!isNaN(Date.parse(raw))) {
+                converted = new Date(raw);
+            }
+            this.options.where[key] = converted;
         }
         return this;
     }
@@ -70,7 +78,16 @@ class PrismaAPIFeatures {
     limitFields() {
         if (this.queryString.fields) {
             const fields = this.queryString.fields.split(",");
+            const omitFieldsObject = {};
+            const omitFields = Object.keys(this.prismaQuery);
+            if (omitFields.includes("omit")) {
+                Object.keys(this.prismaQuery.omit).forEach((e) => (omitFieldsObject[e] = false));
+            }
             this.options.select = fields.reduce((acc, f) => ({ ...acc, [f]: true }), {});
+            this.options.select = {
+                ...this.options.select,
+                ...omitFieldsObject,
+            };
         }
         return this;
     }
@@ -82,8 +99,12 @@ class PrismaAPIFeatures {
         this.options.skip = skip;
         return this;
     }
-    async findMany() {
-        return await client_1.prisma[this.model].findMany(this.options);
+    async findMany(includes = {}) {
+        const data = await client_1.prisma[this.model].findMany({
+            ...includes,
+            ...this.options,
+        });
+        return data;
     }
     async count() {
         return await client_1.prisma[this.model].count({

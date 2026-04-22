@@ -60,8 +60,5 @@ export const userRepository = {
       where: {
         username,
       },
-      omit: {
-        password: true,
-      },
     }),
 };

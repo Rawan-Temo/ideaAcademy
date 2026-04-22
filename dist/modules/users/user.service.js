@@ -9,5 +9,17 @@ exports.UserService = {
     createUser: (data) => {
         return user_repository_1.userRepository.create(data);
     },
+    getUserById: (id) => {
+        return user_repository_1.userRepository.getById(id);
+    },
+    updateUser: (data, id) => {
+        return user_repository_1.userRepository.update(data, id);
+    },
+    deleteManyUsers: (ids) => {
+        return user_repository_1.userRepository.deleteMany(ids);
+    },
+    findByUsername: (username) => {
+        return user_repository_1.userRepository.findByUsername(username);
+    },
 };
 //# sourceMappingURL=user.service.js.map

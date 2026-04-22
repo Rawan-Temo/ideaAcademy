@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { object } from "zod";
 import { QueryParams } from "../types/apiResponse";
 
-export const validate = (schema: any) => {
+export const validateBody = (schema: any) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       schema.parse(req.body); // throws if invalid
@@ -12,15 +12,12 @@ export const validate = (schema: any) => {
     }
   };
 };
-// GO FIBER TypeScript javascript express DBS GORM SEQUELIZE PRISMA MONGOOSE Docker
-// N Tier archetecture
-// front end  archetecture
 
 export function validateQuery<T extends QueryParams>(fieldschema: string[]) {
   return (
     req: Request<any, any, any, T>,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) => {
     try {
       const queryFields = req.query;

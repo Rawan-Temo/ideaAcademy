@@ -6,6 +6,16 @@ export interface GetAllResponse<T> {
   results: number;
   total: number;
 }
+export interface CreatedResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
+}
+export interface GetOneResponse<T> {
+  status: string;
+  data: T;
+  message?: string;
+}
 
 // TODO seprate filtering, sorting, pagination params
 export interface QueryParams extends Record<string, any> {

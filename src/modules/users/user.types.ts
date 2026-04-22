@@ -10,6 +10,7 @@ export interface CreateUserDTO {
 export interface UserResponse {
   id: string;
   username: string;
+  refreshToken: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -23,6 +24,7 @@ export interface UserQueryDto extends QueryParams {
 export interface UpdateUserDTO {
   username?: string;
   password?: string;
+  refreshToken: string;
 }
 export interface UserLoginDTO {
   username: string;
