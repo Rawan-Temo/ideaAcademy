@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from "express";
-import { object } from "zod";
 import { QueryParams } from "../types/apiResponse";
 
 export const validateBody = (schema: any) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log(req.body);
       schema.parse(req.body); // throws if invalid
       next();
     } catch (err: any) {
-      res.status(400).json({ message: err.errors || err.message });
+      res.status(400).json({ message: err.message });
     }
   };
 };

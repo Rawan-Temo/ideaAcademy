@@ -4,7 +4,7 @@ import { User } from "../../generated/prisma/browser";
 import { GetAllResponse } from "../../common/types/apiResponse";
 
 import bcrypt from "bcrypt";
-import { UserLoginDTO, UserQueryDto } from "./user.types";
+import { UserLoginDTO, UserQueryDto, UserResponse } from "./user.types";
 import jwt from "jsonwebtoken";
 import {
   generateAccToken,
@@ -191,6 +191,18 @@ const logout = async (req: Request, res: Response) => {
   }
 };
 
+const userProfile = async (req: Request, res: Response) => {
+  try {
+    const user = req.user;
+    // Exclude refresh token from response
+    user.refreshToken = undefined;
+    return sendOne(res, user);
+  } catch (error) {
+    console.error(error);
+    sendInternalServerError(res, "Internal server error");
+  }
+};
+
 export {
   login,
   getAllUsers,
@@ -200,4 +212,5 @@ export {
   deleteManyUsers,
   logout,
   refreshToken,
+  userProfile,
 };

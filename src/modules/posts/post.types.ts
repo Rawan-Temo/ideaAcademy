@@ -3,7 +3,8 @@ import { DateTimeFilter } from "../../generated/prisma/commonInputTypes";
 
 export interface CreatePostDTO {
   title: string;
-  image: string;
+  image?: string;
+  video?: string;
   content: string;
 }
 

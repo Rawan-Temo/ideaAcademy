@@ -9,6 +9,8 @@ import {
 import { validateBody, validateQuery } from "../../common/middlewares/validate";
 import { createPostSchema, updatePostSchema } from "./post.validation";
 import { PostQueryDto } from "./post.types";
+import { authenticateToken } from "../../common/middlewares/authMiddleware";
+import { uploadImage } from "../../common/middlewares/multerConfig";
 const postFields = [
   "title",
   "id",
@@ -21,8 +23,13 @@ const router = express.Router();
 // Define user-related routes here
 router
   .route("/")
+  .all(authenticateToken)
   .get(validateQuery<PostQueryDto>(postFields), getAllPosts)
-  .post(validateBody(createPostSchema), createPost);
+  .post(
+    uploadImage,
+    validateBody(createPostSchema),
+    createPost,
+  );
 
 router.route("/delete-many").delete(deleteManyPosts);
 

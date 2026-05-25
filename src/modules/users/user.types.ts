@@ -10,7 +10,6 @@ export interface CreateUserDTO {
 export interface UserResponse {
   id: string;
   username: string;
-  refreshToken: string;
   createdAt: Date;
   updatedAt: Date;
 }

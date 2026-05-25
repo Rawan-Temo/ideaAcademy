@@ -7,6 +7,7 @@ import {
   deleteManyUsers,
   login,
   logout,
+  userProfile,
   refreshToken,
 } from "./user.controller";
 import { validateBody, validateQuery } from "../../common/middlewares/validate";
@@ -25,6 +26,7 @@ router
 router.route("/login").post(login);
 router.route("/logout").post(logout);
 router.route("/refresh-token").post(refreshToken);
+router.route("/me").get(authenticateToken, userProfile);
 
 router.route("/delete-many").delete(authenticateToken, deleteManyUsers);
 // T extends the post function itself u can set the request body

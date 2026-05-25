@@ -8,12 +8,13 @@ import cors from "cors";
 const app = express();
 
 dotenv.config();
-app.use(express.static("public"));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // for HTML forms
+app.set("query parser", "extended");
+app.use(express.static(`${__dirname}/public`));
 app.use(morgan("dev"));
 app.use(cookieParser());
 app.use(cors());
-app.set("query parser", "extended");
 
 app.use("/api", routes);
 app.listen(process.env.PORT || 8000, () => {

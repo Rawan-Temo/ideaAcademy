@@ -6,12 +6,7 @@ import {
   UserWhereInput,
 } from "../../generated/prisma/models";
 import { prisma } from "../../prisma/client";
-import {
-  CreateUserDTO,
-  UpdateUserDTO,
-  UserQueryDto,
-  UserResponse,
-} from "./user.types";
+import { CreateUserDTO, UpdateUserDTO, UserQueryDto } from "./user.types";
 
 export const userRepository = {
   getAll: async (query: UserQueryDto) => {

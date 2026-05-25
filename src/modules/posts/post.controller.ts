@@ -4,6 +4,8 @@ import { Post } from "../../generated/prisma/browser";
 import { GetAllResponse } from "../../common/types/apiResponse";
 
 import { PostQueryDto } from "./post.types";
+import { handleError } from "../../common/utils/handleError";
+import { saveToDisk } from "../../common/middlewares/multerConfig";
 // TODO Handle Multer
 const getAllPosts = async <T extends PostQueryDto>(
   req: Request<any, any, any, T>,
@@ -28,16 +30,22 @@ const getAllPosts = async <T extends PostQueryDto>(
 
 const createPost = async (req: Request, res: Response) => {
   try {
-    const { title, image, content } = req.body;
+    const { title, content } = req.body;
+
+    if (req.file) {
+      const imagePath = await saveToDisk(req.file);
+      const imageUrl = `${req.protocol}://${req.get("host")}/${imagePath}`;
+      req.body.image = imageUrl;
+    }
     const post = await PostService.createPost({
       title,
-      image,
       content,
+      image: req.body.image,
     });
     res.status(201).json(post);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    handleError(error, res);
   }
 };
 

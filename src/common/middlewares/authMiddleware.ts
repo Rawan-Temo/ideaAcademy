@@ -17,9 +17,7 @@ export const authenticateToken = async (
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(" ")[1];
 
-    console.log(token);
     if (!token || token === "null") {
-      console.log("Authenticating token:", token);
       sendUnauthorized(res, "No token provided");
       return;
     }
@@ -34,12 +32,11 @@ export const authenticateToken = async (
       sendUnauthorized(res, "Invalid token");
       return;
     }
-
     req.user = foundUser;
     next();
   } catch (error) {
     console.error(error);
-    sendInternalServerError(res, "Internal server error");
+    sendUnauthorized(res, "Invalid token error");
   }
 };
 

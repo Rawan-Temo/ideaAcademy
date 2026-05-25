@@ -31,6 +31,8 @@ export const postRepository = {
     prisma.post.create({
       data,
     }),
+
+
   getById: (id: any) =>
     prisma.post.findUnique({
       where: {
