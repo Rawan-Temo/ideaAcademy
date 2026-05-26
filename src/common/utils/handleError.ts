@@ -1,5 +1,6 @@
 import { Response } from "express";
 import { Prisma } from "../../generated/prisma/client";
+import { ZodError } from "zod";
 
 export const handleError = (error: any, res: Response) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -61,6 +62,16 @@ export const handleError = (error: any, res: Response) => {
     }
   }
 
+  // ------------------------------------------------
+  // zod validation errors (schema mismatch — dev bug)
+  // ------------------------------------------------
+  if (error instanceof ZodError) {
+    res.status(400).json({
+      message: "Validation failed",
+      errors: error.flatten(), // or error.errors for raw array
+    });
+    return;
+  }
   // ------------------------------------------------
   // Prisma validation errors (schema mismatch — dev bug)
   // ------------------------------------------------

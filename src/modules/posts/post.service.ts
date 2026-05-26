@@ -15,6 +15,9 @@ export const PostService = {
   updatePost: (data: UpdatePostDTO, id: any) => {
     return postRepository.update(data, id);
   },
+  deletePost: (id: string) => {
+    return postRepository.deleteOne(id);
+  },
   deleteManyPosts: (ids: any[]) => {
     return postRepository.deleteMany(ids);
   },

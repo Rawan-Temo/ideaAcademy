@@ -1,15 +1,12 @@
-import { ALL } from "dns";
 import fs from "fs";
 import multer from "multer";
 import path from "path";
-import { allowedNodeEnvironmentFlags } from "process";
 
 const ALLOWED_IMAGE_TYPES = [
-  "images/jpeg",
-  "images/png",
-  "images/png",
-  "images/jpg",
-  "images/webp",
+  "image/jpeg",
+  "image/png",
+  "image/jpg",
+  "image/webp",
 ];
 
 const IMAGE_DIR = path.join(__dirname, "../../public/images");
@@ -39,7 +36,19 @@ const generateFileName = (file: Express.Multer.File) => {
 // Helpers ===================
 
 // storage ===================
-const storage = multer.memoryStorage();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const isVideo = ALLOWED_VIDEO_TYPES.includes(file.mimetype);
+    const uploadDir = isVideo ? VIDEO_DIR : IMAGE_DIR;
+    ensureDir(uploadDir);
+
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const name = generateFileName(file);
+    cb(null, name);
+  },
+});
 // storage ===================
 
 // FILTERS ===================
@@ -67,15 +76,16 @@ const videoFilter: multer.Options["fileFilter"] = (req, file, cb) => {
 };
 const mediaFileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
   const allowedTypes = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
+  console.log(file);
 
-  if (allowedTypes.includes(file.mimetype)) {
+  if (
+    (file.fieldname === "image" &&
+      ALLOWED_IMAGE_TYPES.includes(file.mimetype)) ||
+    (file.fieldname === "video" && ALLOWED_VIDEO_TYPES.includes(file.mimetype))
+  ) {
     cb(null, true);
   } else {
-    cb(
-      new Error(
-        `Invalid file type. Allowed: ${ALLOWED_VIDEO_TYPES.join(", ")}`,
-      ),
-    );
+    cb(new Error(`Invalid file type. Allowed: ${allowedTypes.join(", ")}`));
   }
 };
 
@@ -115,19 +125,4 @@ export const deleteFile = async (filePath: string): Promise<void> => {
   } catch (err: any) {
     if (err.code !== "ENOENT") throw err; // ENOENT = already gone, ignore it
   }
-};
-export const saveToDisk = async (
-  file: Express.Multer.File,
-): Promise<string> => {
-  const isVideo = ALLOWED_VIDEO_TYPES.includes(file.mimetype);
-  const uploadDir = isVideo ? VIDEO_DIR : IMAGE_DIR;
-
-  await fs.promises.mkdir(uploadDir, { recursive: true });
-
-  const filename = generateFileName(file);
-  const fullPath = path.join(uploadDir, filename);
-
-  await fs.promises.writeFile(fullPath, file.buffer);
-
-  return fullPath; // return path to store in DB
 };

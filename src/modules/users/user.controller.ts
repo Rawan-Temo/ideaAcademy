@@ -25,7 +25,6 @@ const getAllUsers = async <T extends UserQueryDto>(
   res: Response,
 ) => {
   try {
-    console.log("hi");
     const { rows, count } = await UserService.getAllUsers(req.query);
 
     sendAll(res, rows, 200, count);
@@ -43,7 +42,7 @@ const createUser = async (req: Request, res: Response) => {
       username,
       password: hashedPassword,
     });
-    sendCreated(res, user);
+    sendCreated(res, user, "User created successfully");
   } catch (error) {
     console.error(error);
     sendInternalServerError(res, "Internal server error");
@@ -70,7 +69,7 @@ const updateUser = async (req: Request, res: Response) => {
     }
     const data = req.body;
     const user = await UserService.updateUser(data, id);
-    sendOne(res, user);
+    sendOne(res, user, "User updated successfully");
   } catch (error) {
     console.error(error);
     sendInternalServerError(res, "Internal server error");
@@ -98,12 +97,12 @@ const login = async (
     let { username, password } = req.body;
     const user = await UserService.findByUsername(username);
     if (!user) {
-      return sendBadRequest(res, "Invalid Username or Password");
+      return sendNotFound(res, "Invalid Username or Password");
     }
 
     let isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return sendBadRequest(res, "Invalid Username or Password");
+      return sendNotFound(res, "Invalid Username or Password");
     }
     let accessToken = generateAccToken(user);
     let refreshToken = generateRefToken(user);
@@ -111,6 +110,7 @@ const login = async (
     setCookie(res, refreshToken);
 
     res.status(200).json({
+      message: "Login successful",
       accessToken,
       user: {
         id: user.id,
@@ -172,7 +172,6 @@ const refreshToken = async (req: Request, res: Response) => {
 const logout = async (req: Request, res: Response) => {
   try {
     const token = req.cookies.refreshToken;
-    console.log("Logging out user with token:", token);
     if (token) {
       try {
         const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET!) as {

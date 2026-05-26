@@ -4,13 +4,16 @@ import {
   createPost,
   getOnPost,
   updatePost,
-  deleteManyPosts,
+  deletePost,
 } from "./post.controller";
 import { validateBody, validateQuery } from "../../common/middlewares/validate";
 import { createPostSchema, updatePostSchema } from "./post.validation";
 import { PostQueryDto } from "./post.types";
 import { authenticateToken } from "../../common/middlewares/authMiddleware";
-import { uploadImage } from "../../common/middlewares/multerConfig";
+import {
+  uploadImage,
+  uploadMedia,
+} from "../../common/middlewares/multerConfig";
 const postFields = [
   "title",
   "id",
@@ -23,20 +26,24 @@ const router = express.Router();
 // Define user-related routes here
 router
   .route("/")
-  .all(authenticateToken)
   .get(validateQuery<PostQueryDto>(postFields), getAllPosts)
   .post(
-    uploadImage,
+    authenticateToken,
+    uploadMedia,
     validateBody(createPostSchema),
     createPost,
   );
-
-router.route("/delete-many").delete(deleteManyPosts);
 
 // T extends the post function itself u can set the request body
 router
   .route("/:id")
   .get(getOnPost)
-  .patch(validateBody(updatePostSchema), updatePost);
+  .patch(
+    authenticateToken,
+    uploadMedia,
+    validateBody(updatePostSchema),
+    updatePost,
+  )
+  .delete(authenticateToken, deletePost);
 
 export default router;

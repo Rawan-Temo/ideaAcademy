@@ -1,14 +1,20 @@
 import { Request, Response, NextFunction } from "express";
 import { QueryParams } from "../types/apiResponse";
+import { deleteFile } from "./multerConfig";
+import { handleError } from "../utils/handleError";
 
 export const validateBody = (schema: any) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log(req.body);
       schema.parse(req.body); // throws if invalid
       next();
     } catch (err: any) {
-      res.status(400).json({ message: err.message });
+      if (req.files) {
+        Object.values(req.files).forEach((file: any) => {
+          deleteFile(file[0].path);
+        });
+      }
+      handleError(err, res);
     }
   };
 };
@@ -21,11 +27,13 @@ export function validateQuery<T extends QueryParams>(fieldschema: string[]) {
   ) => {
     try {
       const queryFields = req.query;
-      console.log("Test");
 
       if (queryFields.sort) {
         const sortFields = queryFields.sort.split(",");
-        if (!checkTwoMatchingArrays(sortFields, fieldschema)) {
+        const unsignedFields = sortFields.map((field) =>
+          field.startsWith("-") ? field.slice(1) : field,
+        );
+        if (!checkTwoMatchingArrays(unsignedFields, fieldschema)) {
           res.status(400).json({ message: `Invalid sort  query parameter` });
           return;
         }

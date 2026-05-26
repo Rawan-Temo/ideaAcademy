@@ -21,6 +21,7 @@ export interface PostQueryDto extends QueryParams {
   id: string;
   title: string;
   image: string;
+  video: string;
   content: string;
   createdAt: Date | DateTimeFilter;
   updatedAt: Date | DateTimeFilter;
@@ -29,4 +30,5 @@ export interface UpdatePostDTO {
   title?: string;
   image?: string;
   content?: string;
+  video?: string;
 }

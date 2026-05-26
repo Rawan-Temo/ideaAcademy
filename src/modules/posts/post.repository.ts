@@ -32,7 +32,6 @@ export const postRepository = {
       data,
     }),
 
-
   getById: (id: any) =>
     prisma.post.findUnique({
       where: {
@@ -50,6 +49,12 @@ export const postRepository = {
     prisma.post.deleteMany({
       where: {
         id: { in: ids },
+      },
+    }),
+  deleteOne: (id: string) =>
+    prisma.post.delete({
+      where: {
+        id,
       },
     }),
 };
