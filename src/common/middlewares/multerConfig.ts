@@ -9,8 +9,8 @@ const ALLOWED_IMAGE_TYPES = [
   "image/webp",
 ];
 
-const IMAGE_DIR = path.join(__dirname, "../../public/images");
-const VIDEO_DIR = path.join(__dirname, "../../public/videos");
+const IMAGE_DIR = path.join(__dirname, "../../../public/images");
+const VIDEO_DIR = path.join(__dirname, "../../../public/videos");
 
 const ALLOWED_VIDEO_TYPES = [
   "video/mp4",
@@ -24,7 +24,6 @@ const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 // Helpers ===================
 const ensureDir = async (folderPath: string): Promise<void> => {
   await fs.promises.mkdir(folderPath, { recursive: true });
-  // recursive: true already does nothing if folder exists, no need to check first
 };
 
 const generateFileName = (file: Express.Multer.File) => {
@@ -41,8 +40,8 @@ const storage = multer.diskStorage({
     const isVideo = ALLOWED_VIDEO_TYPES.includes(file.mimetype);
     const uploadDir = isVideo ? VIDEO_DIR : IMAGE_DIR;
     ensureDir(uploadDir);
-
-    cb(null, uploadDir);
+    //TODO handle error here
+    cb(new Error("Test"), uploadDir);
   },
   filename: (req, file, cb) => {
     const name = generateFileName(file);
@@ -76,7 +75,6 @@ const videoFilter: multer.Options["fileFilter"] = (req, file, cb) => {
 };
 const mediaFileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
   const allowedTypes = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
-  console.log(file);
 
   if (
     (file.fieldname === "image" &&
@@ -118,7 +116,7 @@ export const uploadMedia = mediaUpload.fields([
 export const deleteFile = async (filePath: string): Promise<void> => {
   const fullPath = path.isAbsolute(filePath)
     ? filePath
-    : path.join(__dirname, "../../public", filePath);
+    : path.join(__dirname, "../../../public", filePath);
 
   try {
     await fs.promises.unlink(fullPath);

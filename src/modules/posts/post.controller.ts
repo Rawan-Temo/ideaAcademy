@@ -119,7 +119,6 @@ const deletePost = async (req: Request, res: Response) => {
       return;
     }
     if (post.image) {
-      console.log(post.image);
       deleteFile(post.image.slice(1));
     }
     if (post.video) {
