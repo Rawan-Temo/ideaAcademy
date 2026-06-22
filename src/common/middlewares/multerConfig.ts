@@ -41,7 +41,7 @@ const storage = multer.diskStorage({
     const uploadDir = isVideo ? VIDEO_DIR : IMAGE_DIR;
     ensureDir(uploadDir);
     //TODO handle error here
-    cb(new Error("Test"), uploadDir);
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
     const name = generateFileName(file);

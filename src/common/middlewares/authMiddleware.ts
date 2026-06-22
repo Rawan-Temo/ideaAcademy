@@ -7,9 +7,10 @@ import {
   sendInternalServerError,
   sendUnauthorized,
 } from "../utils/response";
+import { AuthRequestContext } from "../types/requestContext";
 
 export const authenticateToken = async (
-  req: Request<any, any, any, any>,
+  req: AuthRequestContext,
   res: Response,
   next: NextFunction,
 ) => {
@@ -40,21 +41,22 @@ export const authenticateToken = async (
   }
 };
 
-export const allowedTo = (...roles: string[]) => {
-  return (req: Request, res: Response, next: NextFunction) => {
-    const currentUser = req.user;
-
-    if (!currentUser) {
-      sendForbidden(res, "Forbidden");
-
-      return;
-    }
-
-    if (!roles.includes(currentUser.role)) {
-      sendForbidden(res, "Forbidden");
-      return;
-    }
-
-    next();
-  };
-};
+// export const allowedTo = (...roles: string[]) => {
+// return (req: AuthRequestContext, res: Response, next: NextFunction) => {
+// const currentUser = req.user;
+//
+// if (!currentUser) {
+// sendForbidden(res, "Forbidden");
+//
+// return;
+// }
+//
+// if (!roles.includes(currentUser.role )) {
+// sendForbidden(res, "Forbidden");
+// return;
+// }
+//
+// next();
+// };
+// };
+//

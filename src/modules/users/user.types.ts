@@ -1,7 +1,8 @@
+import { Request } from "express";
 import { QueryParams } from "../../common/types/apiResponse";
+import { User } from "../../generated/prisma/client";
 import { DateTimeFilter } from "../../generated/prisma/commonInputTypes";
 // TODO seprate each DTOs into own files and class
-
 export interface CreateUserDTO {
   username: string;
   password: string;

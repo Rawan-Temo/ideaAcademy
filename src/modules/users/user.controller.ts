@@ -20,6 +20,7 @@ import {
   sendOne,
   sendUnauthorized,
 } from "../../common/utils/response";
+import { AuthRequestContext } from "../../common/types/requestContext";
 const getAllUsers = async <T extends UserQueryDto>(
   req: Request<any, any, any, T>,
   res: Response,
@@ -190,11 +191,11 @@ const logout = async (req: Request, res: Response) => {
   }
 };
 
-const userProfile = async (req: Request, res: Response) => {
+const userProfile = async (req: AuthRequestContext, res: Response) => {
   try {
-    const user = req.user;
+    const user = req.user as User;
     // Exclude refresh token from response
-    user.refreshToken = undefined;
+    user.refreshToken = null;
     return sendOne(res, user);
   } catch (error) {
     console.error(error);
