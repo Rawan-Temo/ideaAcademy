@@ -1,6 +1,7 @@
 import { Response } from "express";
 import { Prisma } from "../../generated/prisma/client";
 import { ZodError } from "zod";
+import multer from "multer";
 
 // ------------------------------------------------
 // Helpers for parsing Prisma error.meta shapes,
@@ -101,6 +102,20 @@ const formatZodError = (error: ZodError) => {
   };
 };
 
+/**
+ * Maps multer's built-in MulterError codes to friendlier messages.
+ * Reference: https://github.com/expressjs/multer#error-handling
+ */
+const multerErrorMessages: Record<string, string> = {
+  LIMIT_FILE_SIZE: "File is too large",
+  LIMIT_FILE_COUNT: "Too many files uploaded",
+  LIMIT_FIELD_KEY: "Field name too long",
+  LIMIT_FIELD_VALUE: "Field value too long",
+  LIMIT_FIELD_COUNT: "Too many fields",
+  LIMIT_UNEXPECTED_FILE: "Unexpected file field",
+  LIMIT_PART_COUNT: "Too many parts in multipart form",
+};
+
 export const handleError = (error: any, res: Response) => {
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
     switch (error.code) {
@@ -195,6 +210,34 @@ export const handleError = (error: any, res: Response) => {
     res.status(500).json({ message: "Service temporarily unavailable" });
     return;
   }
+  // ------------------------------------------------
+  // Multer errors
+  // ------------------------------------------------
+  // Built-in multer limits (file size, file count, etc.) — these come
+  // through as a proper multer.MulterError with a .code
+  if (error instanceof multer.MulterError) {
+    res.status(400).json({
+      message: multerErrorMessages[error.code] ?? "File upload error",
+      field: error.field, // present for LIMIT_UNEXPECTED_FILE, LIMIT_FIELD_KEY, etc.
+    });
+    return;
+  }
+
+  // Custom fileFilter errors (e.g. rejecting on file type/mimetype) are
+  // plain Errors thrown from your own multerConfig.ts — multer doesn't
+  // wrap these, so there's no .code unless you set one yourself.
+  // Preferred: in multerConfig.ts, do `(error as any).code = "INVALID_FILE_TYPE"`
+  // before calling cb(error), then check error.code === "INVALID_FILE_TYPE" here.
+  if (
+    error.code === "INVALID_FILE_TYPE" ||
+    /invalid file type/i.test(error.message ?? "")
+  ) {
+    res.status(400).json({
+      message: error.message ?? "Invalid file type",
+    });
+    return;
+  }
+
   // ------------------------------------------------
   // JWT errors
   // ------------------------------------------------

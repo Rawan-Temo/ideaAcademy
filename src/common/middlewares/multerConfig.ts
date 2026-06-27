@@ -1,6 +1,7 @@
 import fs from "fs";
 import multer from "multer";
 import path from "path";
+import { handleError } from "../utils/handleError";
 
 const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
@@ -106,11 +107,28 @@ const mediaUpload = multer({
 // ─── Exports ──────────────────────────────────────────────────
 export const uploadImage = imageUpload.single("image");
 export const uploadVideo = videoUpload.single("video");
-export const uploadMedia = mediaUpload.fields([
-  // for routes that need both
-  { name: "image", maxCount: 1 },
-  { name: "video", maxCount: 1 },
-]);
+// export const uploadMedia = mediaUpload.fields([
+//   // for routes that need both
+//   { name: "image", maxCount: 1 },
+//   { name: "video", maxCount: 1 },
+// ]);
+export const uploadMedia = async (req: any, res: any, next: any) => {
+  const upload = mediaUpload.fields([
+    // for routes that need both
+    { name: "image", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]);
+  upload(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      console.log(err);
+      return handleError(err, res);
+    } else if (err) {
+      console.log(err);
+      return handleError(err, res);
+    }
+    next();
+  });
+};
 
 // ─── Delete from Disk ─────────────────────────────────────────
 export const deleteFile = async (filePath: string): Promise<void> => {
