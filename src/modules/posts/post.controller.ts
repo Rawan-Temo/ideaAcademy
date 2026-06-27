@@ -6,10 +6,10 @@ import { GetAllResponse } from "../../common/types/apiResponse";
 import { PostQueryDto } from "./post.types";
 import { handleError } from "../../common/utils/handleError";
 import { deleteFile } from "../../common/middlewares/multerConfig";
-import { sendNotFound } from "../../common/utils/response";
+import { sendNotFound, sendOne } from "../../common/utils/response";
 // TODO Handle Multer
-const getAllPosts = async <T extends PostQueryDto>(
-  req: Request<any, any, any, T>,
+const getAllPosts = async (
+  req: Request<any, any, any, PostQueryDto>,
   res: Response,
 ) => {
   try {
@@ -92,13 +92,12 @@ const updatePost = async (req: Request, res: Response) => {
     const data = req.body;
     const post = await PostService.updatePost(data, id);
     if (oldImage && oldImage !== post.image) {
-      console.log(oldImage);
       deleteFile(oldImage.slice(1));
     }
     if (oldVideo && oldVideo !== post.video) {
       deleteFile(oldVideo.slice(1));
     }
-    res.status(200).json(post);
+    sendOne(res, post, "Post updated successfully");
   } catch (error) {
     if (req.files) {
       Object.values(req.files).forEach((file: any) => {

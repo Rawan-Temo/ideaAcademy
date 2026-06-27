@@ -20,7 +20,11 @@ export function sendAll<T>(
   res.status(statusCode).json(response);
 }
 
-export function sendCreated<T>(res: Response, data: T, message?: string): void {
+export function sendCreated<T>(
+  res: Response,
+  data: T,
+  message: string = "item Create Successfully",
+): void {
   const response: CreatedResponse<T> = {
     status: "success",
     data,
