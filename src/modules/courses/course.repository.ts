@@ -13,6 +13,13 @@ export const courseRepository = {
       .sort()
       .limitFields()
       .paginate();
+    prisma.course.findMany({
+      where: {
+        id: {
+          notIn: ["test"],
+        },
+      },
+    });
 
     const rows = await features.findMany();
 

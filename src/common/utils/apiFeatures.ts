@@ -3,6 +3,7 @@
 import { Request } from "express";
 import { Prisma } from "../../generated/prisma/client";
 import { prisma } from "../../prisma/client";
+import { array } from "zod";
 // TODO Add _multi
 export class PrismaAPIFeatures<T extends Uncapitalize<Prisma.ModelName>, U> {
   private model: T;
@@ -29,16 +30,22 @@ export class PrismaAPIFeatures<T extends Uncapitalize<Prisma.ModelName>, U> {
 
   filter() {
     const queryObj: any = { ...this.queryString };
+    console.log(queryObj);
     const excludedFields = ["page", "sort", "limit", "fields", "search"];
     excludedFields.forEach((el) => delete queryObj[el]);
 
-    const numericOps = new Set(["gte", "gt", "lte", "lt"]);
+    const numericOps = new Set(["gte", "gt", "lte", "lt", "in", "notIn"]);
     const stringOps = new Set(["contains", "startsWith", "endsWith"]);
 
-    const parseValue = (raw: string): any => {
+    const parseValue = (raw: any): any => {
       if (raw === "") return raw;
+      if (Array.isArray(raw)) {
+        return raw;
+      }
       const num = Number(raw);
-      if (!isNaN(num)) return num;
+      if (!isNaN(num)) {
+        return num;
+      }
       if (!isNaN(Date.parse(raw))) return new Date(raw);
       return raw;
     };
