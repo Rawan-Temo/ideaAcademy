@@ -22,7 +22,6 @@ const ALLOWED_VIDEO_TYPES = [
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
-// Helpers ===================
 const ensureDir = async (folderPath: string): Promise<void> => {
   await fs.promises.mkdir(folderPath, { recursive: true });
 };
@@ -33,9 +32,6 @@ const generateFileName = (file: Express.Multer.File) => {
   return `${file.fieldname}-${uniqueSuffix}${ext}`;
 };
 
-// Helpers ===================
-
-// storage ===================
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const isVideo = ALLOWED_VIDEO_TYPES.includes(file.mimetype);
@@ -49,9 +45,7 @@ const storage = multer.diskStorage({
     cb(null, name);
   },
 });
-// storage ===================
 
-// FILTERS ===================
 const imageFilter: multer.Options["fileFilter"] = (req, file, cb) => {
   if (ALLOWED_IMAGE_TYPES.includes(file.mimetype)) {
     cb(null, true);
